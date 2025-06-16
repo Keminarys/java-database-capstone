@@ -65,7 +65,8 @@ public class Doctor {
 
     public void setName(String name) {
         this.name = name;
-       public void setSpecialty(String specialty) {
+    }
+    public void setSpecialty(String specialty) {
         this.specialty = specialty;
     }
 
