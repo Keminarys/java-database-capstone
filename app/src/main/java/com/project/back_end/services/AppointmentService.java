@@ -1,267 +1,196 @@
+package com.project.back_end.services;
 
-package com.project.app.services;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import com.project.app.repositories.*;
-import com.project.app.models.*;
+import com.project.back_end.DTO.AppointmentDTO;
+import com.project.back_end.models.Appointment;
+import com.project.back_end.models.Patient;
+import com.project.back_end.repo.AppointmentRepository;
+import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
+import jakarta.transaction.Transactional;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.Comparator;
-import java.util.ArrayList;
-import com.project.app.dtos.AppointmentDTO;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 
 @Service
 public class AppointmentService {
-    
-    @Autowired
-    private AppointmentRepo appointmentRepository;
-    
-    @Autowired
-    private DoctorRepo doctorRepository;
-    
-    @Autowired
-    private PatientRepo patientRepository;
 
-    public ResponseEntity<?> bookAppointment(Map<String, Object> bookingData) {
-        try {
-            Long doctorId = Long.parseLong(bookingData.get("doctorId").toString());
-            Long patientId = Long.parseLong(bookingData.get("patientId").toString());
-            String date = (String) bookingData.get("date");
-            String time = (String) bookingData.get("time");
-            String reason = (String) bookingData.get("reason");
+    private final AppointmentRepository appointmentRepository;
+    private final AppService service;
+    private final TokenService tokenService;
+    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
 
-            Doctor doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new RuntimeException("Doctor not found"));
-
-            Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
-
-            LocalDateTime appointmentTime = LocalDateTime.of(LocalDate.parse(date), LocalTime.parse(time));
-
-            Appointment appointment = new Appointment();
-            appointment.setDoctor(doctor);
-            appointment.setPatient(patient);
-            appointment.setAppointmentTime(appointmentTime);
-            appointment.setStatus("BOOKED");
-
-            Appointment saved = appointmentRepository.save(appointment);
-
-            return ResponseEntity.ok(Map.of(
-                "message", "Appointment booked successfully",
-                "appointmentId", saved.getId()
-            ));
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Failed to book appointment: " + e.getMessage()
-            ));
-        }
+    public AppointmentService(
+            AppointmentRepository appointmentRepository,
+            AppService service,
+            TokenService tokenService,
+            PatientRepository patientRepository,
+            DoctorRepository doctorRepository
+    ) {
+        this.appointmentRepository = appointmentRepository;
+        this.service = service;
+        this.tokenService = tokenService;
+        this.patientRepository = patientRepository;
+        this.doctorRepository = doctorRepository;
     }
 
-    public ResponseEntity<?> bookAppointment(Appointment appointment) {
+    public int bookAppointment(Appointment appointment) {
         try {
-            // Validate doctor exists
-            if (!doctorRepository.existsById(appointment.getDoctor().getId())) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Doctor not found"
-                ));
-            }
-
-            // Check if time slot is available
-            if (appointmentRepository.isTimeSlotBooked(
-                appointment.getDoctor().getId(), 
-                appointment.getAppointmentTime()
-            )) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Time slot already booked"
-                ));
-            }
-
-            // Validate patient exists
-            if (!patientRepository.existsById(appointment.getPatient().getId())) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Patient not found"
-                ));
-            }
-            
-            // Save appointment
-            Appointment saved = appointmentRepository.save(appointment);
-            return ResponseEntity.ok(Map.of(
-                "message", "Appointment booked successfully",
-                "appointmentId", saved.getId()
-            ));
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Failed to book appointment: " + e.getMessage()
-            ));
-        }
-    }
-
-    public ResponseEntity<?> updateAppointment(Long appointmentId, Appointment updatedAppointment) {
-        try {
-            // Find existing appointment
-            Optional<Appointment> existingAppointment = appointmentRepository.findById(appointmentId);
-            if (existingAppointment.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Appointment not found"
-                ));
-            }
-
-            // Check if new time slot is available
-            if (!existingAppointment.get().getAppointmentTime().equals(updatedAppointment.getAppointmentTime()) &&
-                appointmentRepository.isTimeSlotBooked(
-                    updatedAppointment.getDoctor().getId(), 
-                    updatedAppointment.getAppointmentTime()
-                )) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "New time slot is already booked"
-                ));
-            }
-
-            // Update appointment
-            Appointment appointment = existingAppointment.get();
-            appointment.setAppointmentTime(updatedAppointment.getAppointmentTime());
-            appointment.setStatus(updatedAppointment.getStatus());
-            
             appointmentRepository.save(appointment);
-            
-            return ResponseEntity.ok(Map.of(
-                "message", "Appointment updated successfully"
-            ));
-
+            return 1;
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Failed to update appointment: " + e.getMessage()
-            ));
+            System.err.println("Error booking appointment: " + e.getMessage());
+            return 0;
         }
     }
 
-    public ResponseEntity<?> cancelAppointment(Long appointmentId) {
-        try {
-            // Find appointment
-            Optional<Appointment> appointment = appointmentRepository.findById(appointmentId);
-            if (appointment.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Appointment not found"
-                ));
+    public ResponseEntity<Map<String, String>> updateAppointment(
+            Appointment appointment
+    ) {
+        Map<String, String> response = new HashMap<>();
+
+        Optional<Appointment> existingAppointment = appointmentRepository.findById(
+                appointment.getId()
+        );
+        if (existingAppointment.isEmpty()) {
+            response.put(
+                    "message",
+                    "Appointment not found with ID: " + appointment.getId()
+            );
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        if (
+                !existingAppointment
+                        .get()
+                        .getPatient()
+                        .getId()
+                        .equals(appointment.getPatient().getId())
+        ) {
+            response.put("message", "Patient ID mismatch.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+        int validationResult = service.validateAppointment(appointment);
+        if (validationResult == 1) {
+            try {
+                appointmentRepository.save(appointment);
+                response.put("message", "Appointment updated successfully.");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            } catch (Exception e) {
+                System.err.println("Error updating appointment: " + e.getMessage());
+                response.put("message", "Internal server error during update.");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
             }
+        } else if (validationResult == -1) {
+            response.put("message", "Invalid doctor ID.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
 
-            // Cancel appointment
-            appointment.get().setStatus("CANCELLED");
-            appointmentRepository.save(appointment.get());
+        response.put(
+                "message",
+                "Appointment slot unavailable or doctor not available."
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
 
-            return ResponseEntity.ok(Map.of(
-                "message", "Appointment cancelled successfully"
-            ));
+    public ResponseEntity<Map<String, String>> cancelAppointment(
+            long id,
+            String token
+    ) {
+        Map<String, String> response = new HashMap<>();
+        Optional<Appointment> appointmentOptional = appointmentRepository.findById(
+                id
+        );
 
+        if (appointmentOptional.isEmpty()) {
+            response.put("message", "Appointment not found with ID: " + id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        String extractedEmail = tokenService.extractEmail(token);
+        Patient patient = patientRepository.findByEmail(extractedEmail);
+
+        if (!patient.getId().equals(appointmentOptional.get().getPatient().getId())) {
+            response.put("message", "Patient ID mismatch.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        }
+
+        try {
+            appointmentRepository.delete(appointmentOptional.get());
+            response.put("message", "Appointment cancelled successfully.");
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Failed to cancel appointment: " + e.getMessage()
-            ));
+            System.err.println("Error cancelling appointment: " + e.getMessage());
+            response.put("message", "Internal server error during cancellation.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
-    public ResponseEntity<?> getUpcomingAppointments(Long patientId) {
-        try {
-            LocalDateTime now = LocalDateTime.now();
-            List<Appointment> appointments = appointmentRepository.findByPatientIdAndAppointmentTimeAfter(
-                patientId, now);
+    @Transactional
+    public Map<String, Object> getAppointment(
+            String patientName,
+            LocalDate date,
+            String token
+    ) {
+        Map<String, Object> map = new HashMap<>();
+        String extractedEmail = tokenService.extractEmail(token);
+        Long doctorId = doctorRepository.findByEmail(extractedEmail).getId();
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
 
-            appointments.sort(Comparator.comparing(Appointment::getAppointmentTime));
+        List<Appointment> appointments;
 
-            return ResponseEntity.ok(Map.of("appointments", appointments));
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Failed to fetch upcoming appointments: " + e.getMessage()
-            ));
+        if (patientName.equals("null")) {
+            appointments =
+                    appointmentRepository.findByDoctorIdAndAppointmentTimeBetween(
+                            doctorId,
+                            startOfDay,
+                            endOfDay
+                    );
+        } else {
+            appointments =
+                    appointmentRepository.findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(
+                            doctorId,
+                            patientName,
+                            startOfDay,
+                            endOfDay
+                    );
         }
-    }
 
-    public ResponseEntity<?> getAvailableSlots(Long doctorId, String date) {
-        try {
-            // Validate doctor exists
-            if (!doctorRepository.existsById(doctorId)) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Doctor not found"
-                ));
-            }
-
-            LocalDate appointmentDate = LocalDate.parse(date);
-            LocalDateTime startOfDay = appointmentDate.atStartOfDay();
-            LocalDateTime endOfDay = appointmentDate.plusDays(1).atStartOfDay();
-
-            // Get all appointments for the day
-            List<Appointment> appointments = appointmentRepository.findByDoctorIdAndAppointmentTimeBetween(
-                doctorId, startOfDay, endOfDay);
-
-            // Generate available time slots (assuming 30-minute slots from 9 AM to 5 PM)
-            List<String> allSlots = generateTimeSlots();
-            Set<String> bookedSlots = appointments.stream()
-                .map(apt -> apt.getAppointmentTime().toLocalTime().toString())
-                .collect(Collectors.toSet());
-
-            // Filter out booked slots
-            List<String> availableSlots = allSlots.stream()
-                .filter(slot -> !bookedSlots.contains(slot))
+        List<AppointmentDTO> appointmentDTOs = appointments
+                .stream()
+                .map(
+                        app ->
+                                new AppointmentDTO(
+                                        app.getId(),
+                                        app.getDoctor().getId(),
+                                        app.getDoctor().getName(),
+                                        app.getPatient().getId(),
+                                        app.getPatient().getName(),
+                                        app.getPatient().getEmail(),
+                                        app.getPatient().getPhone(),
+                                        app.getPatient().getAddress(),
+                                        app.getAppointmentTime(),
+                                        app.getStatus()
+                                )
+                )
                 .collect(Collectors.toList());
 
-            return ResponseEntity.ok(Map.of("availableSlots", availableSlots));
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Failed to fetch available slots: " + e.getMessage()
-            ));
-        }
+        map.put("appointments", appointmentDTOs);
+        return map;
     }
 
-    public ResponseEntity<?> getAppointmentHistory(String email, String startDate, String endDate) {
-        try {
-            Patient patient = patientRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Patient not found"));
-
-            LocalDateTime start = startDate != null ? 
-                LocalDate.parse(startDate).atStartOfDay() : 
-                LocalDate.now().minusMonths(1).atStartOfDay();
-            
-            LocalDateTime end = endDate != null ? 
-                LocalDate.parse(endDate).plusDays(1).atStartOfDay() : 
-                LocalDateTime.now();
-
-            List<Appointment> appointments = appointmentRepository.findByPatientIdAndAppointmentTimeBetween(
-                patient.getId(), start, end);
-
-            // Sort by appointment time in descending order
-            appointments.sort(Comparator.comparing(Appointment::getAppointmentTime).reversed());
-
-            return ResponseEntity.ok(Map.of("appointments", appointments));
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
-                "error", "Failed to fetch appointment history: " + e.getMessage()
-            ));
-        }
-    }
-
-    private List<String> generateTimeSlots() {
-        List<String> slots = new ArrayList<>();
-        LocalTime start = LocalTime.of(9, 0); // 9 AM
-        LocalTime end = LocalTime.of(17, 0);  // 5 PM
-        
-        while (start.isBefore(end)) {
-            slots.add(start.toString());
-            start = start.plusMinutes(30);
-        }
-        return slots;
+    @Transactional
+    public void changeStatus(long appointmentId) {
+        appointmentRepository.updateStatus(1, appointmentId);
     }
 }
