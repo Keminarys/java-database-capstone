@@ -1,97 +1,103 @@
 package com.project.back_end.controllers;
 
+import com.project.back_end.DTO.Login;
 import com.project.back_end.models.Patient;
-import com.project.back_end.models.Login;
+import com.project.back_end.services.AppService;
 import com.project.back_end.services.PatientService;
-import com.project.back_end.services.Service;
+import jakarta.validation.Valid;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
-import java.util.List;
 
 @RestController
 @RequestMapping("/patient")
 public class PatientController {
 
-    @Autowired
-    private PatientService patientService;
+    private final PatientService patientService;
+    private final AppService service;
 
     @Autowired
-    private Service sharedService;
-
-    @GetMapping("/info/{token}")
-    public ResponseEntity<?> getPatient(@PathVariable String token) {
-        if (!sharedService.validateToken("patient", token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid or expired token"));
-        }
-
-        Patient patient = patientService.getPatientByToken(token);
-        if (patient == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Patient not found"));
-        }
-
-        return ResponseEntity.ok(patient);
+    public PatientController(PatientService patientService, AppService service) {
+        this.patientService = patientService;
+        this.service = service;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<?> createPatient(@Validated @RequestBody Patient patient) {
-        if (sharedService.exists(patient)) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "Patient already exists"));
+    @GetMapping("/{token}")
+    public ResponseEntity<Map<String, Object>> getPatient(@PathVariable String token) {
+        Map<String, Object> map = new HashMap<>();
+        ResponseEntity<Map<String, String>> tempMap = service.validateToken(
+                token,
+                "patient"
+        );
+        if (!tempMap.getBody().isEmpty()) {
+            map.putAll(tempMap.getBody());
+            return new ResponseEntity<>(map, tempMap.getStatusCode());
         }
+        return patientService.getPatientDetails(token);
+    }
 
-        boolean created = patientService.createPatient(patient);
-        if (created) {
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(Map.of("message", "Patient registered successfully"));
-        } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to register patient"));
+    @PostMapping()
+    public ResponseEntity<Map<String, String>> createPatient(
+            @RequestBody @Valid Patient patient
+    ) {
+        Map<String, String> map = new HashMap<>();
+        if (service.validatePatient(patient)) {
+            int result = patientService.createPatient(patient);
+            if (result == 1) {
+                map.put("message", "Signup successful.");
+                return ResponseEntity.status(HttpStatus.CREATED).body(map);
+            }
+            if (result == 0) {
+                map.put("message", "Internal server error.");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(map);
+            }
         }
+        map.put("message", "Patient with this email or phone number already exists.");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(map);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Login login) {
-        Map<String, Object> result = sharedService.validatePatientLogin(login);
-        if (result.containsKey("error")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
-        }
-        return ResponseEntity.ok(result);
+    public ResponseEntity<Map<String, String>> login(@RequestBody Login login) {
+        return service.validatePatientLogin(login);
     }
 
-    @GetMapping("/appointments/{patientId}/{token}/{user}")
-    public ResponseEntity<?> getPatientAppointment(
-            @PathVariable Long patientId,
+    @GetMapping("/{id}/{user}/{token}")
+    public ResponseEntity<Map<String, Object>> getPatientAppointment(
+            @PathVariable Long id,
             @PathVariable String token,
-            @PathVariable String user) {
-
-        if (!sharedService.validateToken(user, token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid token"));
+            @PathVariable String user
+    ) {
+        Map<String, Object> map = new HashMap<>();
+        ResponseEntity<Map<String, String>> tempMap = service.validateToken(
+                token,
+                user
+        );
+        if (!tempMap.getBody().isEmpty()) {
+            map.putAll(tempMap.getBody());
+            return new ResponseEntity<>(map, tempMap.getStatusCode());
         }
 
-        List<?> appointments = patientService.getAppointments(patientId);
-        return ResponseEntity.ok(Map.of("appointments", appointments));
+        return patientService.getPatientAppointment(id, token);
     }
 
-    @GetMapping("/appointments/filter/{condition}/{name}/{token}")
-    public ResponseEntity<?> filterPatientAppointment(
+    @GetMapping("/filter/{condition}/{name}/{token}")
+    public ResponseEntity<Map<String, Object>> filterPatientAppointment(
             @PathVariable String condition,
             @PathVariable String name,
-            @PathVariable String token) {
-
-        if (!sharedService.validateToken("patient", token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Unauthorized access"));
+            @PathVariable String token
+    ) {
+        Map<String, Object> map = new HashMap<>();
+        ResponseEntity<Map<String, String>> tempMap = service.validateToken(
+                token,
+                "patient"
+        );
+        if (!tempMap.getBody().isEmpty()) {
+            map.putAll(tempMap.getBody());
+            return new ResponseEntity<>(map, tempMap.getStatusCode());
         }
-
-        List<?> filtered = sharedService.filterAppointments(condition, name, token);
-        return ResponseEntity.ok(Map.of("filteredAppointments", filtered));
+        return service.filterPatient(condition, name, token);
     }
 }
