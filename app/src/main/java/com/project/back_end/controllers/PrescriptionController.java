@@ -1,71 +1,70 @@
 package com.project.back_end.controllers;
 
 import com.project.back_end.models.Prescription;
+import com.project.back_end.services.AppService;
 import com.project.back_end.services.AppointmentService;
 import com.project.back_end.services.PrescriptionService;
-import com.project.back_end.services.Service;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-
+import jakarta.validation.Valid;
+import java.util.HashMap;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("${api.path}prescription")
+@RequestMapping("${api.path}" + "prescription")
 public class PrescriptionController {
 
-    @Autowired
-    private PrescriptionService prescriptionService;
+    private final PrescriptionService prescriptionService;
+    private final AppService service;
+    private final AppointmentService appointmentService;
 
     @Autowired
-    private Service sharedService;
+    public PrescriptionController(
+            PrescriptionService prescriptionService,
+            AppService service,
+            AppointmentService appointmentService
+    ) {
+        this.prescriptionService = prescriptionService;
+        this.service = service;
+        this.appointmentService = appointmentService;
+    }
 
-    @Autowired
-    private AppointmentService appointmentService;
-
-    @PostMapping("/save/{token}")
-    public ResponseEntity<?> savePrescriptionValidated(@RequestBody Prescription prescription,
-            @PathVariable String token) {
-
-        if (!sharedService.validateToken("doctor", token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Unauthorized access"));
+    @PostMapping("/{token}")
+    public ResponseEntity<Map<String, String>> savePrescription(
+            @PathVariable String token,
+            @RequestBody @Valid Prescription prescription
+    ) {
+        ResponseEntity<Map<String, String>> tempMap = service.validateToken(
+                token,
+                "doctor"
+        );
+        if (!tempMap.getBody().isEmpty()) {
+            return tempMap;
         }
-
-        boolean appointmentUpdated = appointmentService.markAsPrescribed(prescription.getAppointmentId());
-        if (!appointmentUpdated) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Failed to update appointment status"));
-        }
-
-        boolean saved = prescriptionService.savePrescription(prescription);
-        if (saved) {
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(Map.of("message", "Prescription saved successfully"));
-        } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to save prescription"));
-        }
+        appointmentService.changeStatus(prescription.getAppointmentId());
+        return prescriptionService.savePrescription(prescription);
     }
 
     @GetMapping("/{appointmentId}/{token}")
-    public ResponseEntity<?> getPrescription(
+    public ResponseEntity<Map<String, Object>> getPrescription(
             @PathVariable Long appointmentId,
-            @PathVariable String token) {
-
-        if (!sharedService.validateToken("doctor", token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Unauthorized access"));
+            @PathVariable String token
+    ) {
+        Map<String, Object> map = new HashMap<>();
+        ResponseEntity<Map<String, String>> tempMap = service.validateToken(
+                token,
+                "doctor"
+        );
+        if (!tempMap.getBody().isEmpty()) {
+            map.putAll(tempMap.getBody());
+            return new ResponseEntity<>(map, tempMap.getStatusCode());
         }
-
-        Prescription prescription = prescriptionService.getByAppointmentId(appointmentId);
-        if (prescription == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Prescription not found"));
-        }
-
-        return ResponseEntity.ok(prescription);
+        return prescriptionService.getPrescription(appointmentId);
     }
 }
