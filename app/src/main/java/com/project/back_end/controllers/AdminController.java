@@ -1,27 +1,38 @@
-
 package com.project.back_end.controllers;
 
+import com.project.back_end.model.Admin;
+import com.project.back_end.services.SystemService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("${api.path}admin")
 public class AdminController {
 
-// 1. Set Up the Controller Class:
-//    - Annotate the class with `@RestController` to indicate that it's a REST controller, used to handle web requests and return JSON responses.
-//    - Use `@RequestMapping("${api.path}admin")` to define a base path for all endpoints in this controller.
-//    - This allows the use of an external property (`api.path`) for flexible configuration of endpoint paths.
+    private final SystemService systemService;
 
+    @Autowired
+    public AdminController(SystemService systemService) {
+        this.systemService = systemService;
+    }
 
-// 2. Autowire Service Dependency:
-//    - Use constructor injection to autowire the `Service` class.
-//    - The service handles core logic related to admin validation and token checking.
-//    - This promotes cleaner code and separation of concerns between the controller and business logic layer.
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> adminLogin(@RequestBody Admin admin) {
+        ResponseEntity<?> response = systemService.validateAdmin(admin.getUsername(), admin.getPassword());
 
-
-// 3. Define the `adminLogin` Method:
-//    - Handles HTTP POST requests for admin login functionality.
-//    - Accepts an `Admin` object in the request body, which contains login credentials.
-//    - Delegates authentication logic to the `validateAdmin` method in the service layer.
-//    - Returns a `ResponseEntity` with a `Map` containing login status or messages.
-
-
-
+        Map<String, Object> result = new HashMap<>();
+        if (response.getStatusCode().is2xxSuccessful()) {
+            result.put("status", "success");
+            result.put("token", response.getBody());
+            return ResponseEntity.ok(result);
+        } else {
+            result.put("status", "error");
+            result.put("message", response.getBody());
+            return ResponseEntity.status(response.getStatusCode()).body(result);
+        }
+    }
 }
-
