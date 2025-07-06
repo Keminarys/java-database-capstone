@@ -1,34 +1,38 @@
+
 package com.project.back_end.mvc;
 
+import java.util.Map;
+
+import com.project.back_end.services.AppService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.ModelAndView;
-import com.project.back_end.service.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @Controller
 public class DashboardController {
 
     @Autowired
-    private Service sharedService;
+    AppService service;
 
     @GetMapping("/adminDashboard/{token}")
-    public ModelAndView adminDashboard(@PathVariable String token) {
-        String validationResult = sharedService.validateToken(token, "admin");
-        if (validationResult == null || validationResult.isEmpty()) {
-            return new ModelAndView("admin/adminDashboard");
-        } else {
-            return new ModelAndView("redirect:/");
+    public String adminDashboard(@PathVariable String token) {
+        Map<String, String> map = service.validateToken(token, "admin").getBody();
+        System.out.println("map" + map);
+        if (map.isEmpty()) {
+            return "admin/adminDashboard";
         }
+        return "redirect:http://localhost:8080";
     }
 
     @GetMapping("/doctorDashboard/{token}")
-    public ModelAndView doctorDashboard(@PathVariable String token) {
-        String validationResult = sharedService.validateToken(token, "doctor");
-        if (validationResult == null || validationResult.isEmpty()) {
-            return new ModelAndView("doctor/doctorDashboard");
-        } else {
-            return new ModelAndView("redirect:/");
+    public String doctorDashboard(@PathVariable String token) {
+        Map<String, String> map = service.validateToken(token, "doctor").getBody();
+        System.out.println("map" + map);
+        if (map.isEmpty()) {
+            return "doctor/doctorDashboard";
         }
+
+        return "redirect:http://localhost:8080";
     }
 }
