@@ -16,7 +16,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 @Service
-public class SystemService {
+public class Service {
 
     private final TokenService tokenService;
     private final AdminRepository adminRepository;
@@ -26,7 +26,7 @@ public class SystemService {
     private final PatientService patientService;
 
     @Autowired
-    public SystemService(TokenService tokenService,
+    public Service(TokenService tokenService,
                          AdminRepository adminRepository,
                          DoctorRepository doctorRepository,
                          PatientRepository patientRepository,

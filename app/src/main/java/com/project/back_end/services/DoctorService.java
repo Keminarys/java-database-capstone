@@ -1,10 +1,10 @@
 package com.project.back_end.services;
 
 import com.project.back_end.models.Doctor;
-import com.project.back_end.model.Appointment;
+import com.project.back_end.models.Appointment;
 import com.project.back_end.repo.DoctorRepository;
 import com.project.back_end.repo.AppointmentRepository;
-import com.project.back_end.security.TokenService;
+import com.project.back_end.services.TokenService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
