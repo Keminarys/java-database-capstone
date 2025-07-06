@@ -1,38 +1,46 @@
 package com.project.back_end.controllers;
 
-import com.project.back_end.models.Admin;
-import com.project.back_end.services.SystemService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
 import java.util.Map;
 
+import com.project.back_end.services.AppService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.project.back_end.models.Admin;
+
 @RestController
-@RequestMapping("${api.path}admin")
+@RequestMapping("${api.path}" + "admin")
 public class AdminController {
 
-    private final SystemService systemService;
+    private final AppService service;
 
     @Autowired
-    public AdminController(SystemService systemService) {
-        this.systemService = systemService;
+    public AdminController(AppService service) {
+        this.service = service;
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> adminLogin(@RequestBody Admin admin) {
-        ResponseEntity<?> response = systemService.validateAdmin(admin.getUsername(), admin.getPassword());
+    @PostMapping
+    public ResponseEntity<Map<String, String>> adminLogin(@RequestBody Admin admin)
+    {
+        return service.validateAdmin(admin);
+    }
 
-        Map<String, Object> result = new HashMap<>();
-        if (response.getStatusCode().is2xxSuccessful()) {
-            result.put("status", "success");
-            result.put("token", response.getBody());
-            return ResponseEntity.ok(result);
-        } else {
-            result.put("status", "error");
-            result.put("message", response.getBody());
-            return ResponseEntity.status(response.getStatusCode()).body(result);
+
+    @GetMapping("/dashboard/{token}")
+    public String adminDashboard(@PathVariable String token)
+    {
+        Map<String, String> map=service.validateToken(token,"admin").getBody();
+        if(map==null)
+        {
+            return "admin/adminDashboard";
         }
+        return "redirect:http://localhost:8080/";
+
     }
 }
