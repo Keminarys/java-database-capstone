@@ -1,31 +1,48 @@
 package com.project.back_end.controllers;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class ValidationFailed {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException ex) {
-        // Collect all validation error messages
-        String errorMessages = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(error -> error.getDefaultMessage())
-                .collect(Collectors.joining("; "));
+    public ResponseEntity<Map<String, String>> handleValidationException(
+            MethodArgumentNotValidException ex
+    ) {
+        Map<String, String> errors = new HashMap<>();
+        ex
+                .getBindingResult()
+                .getAllErrors()
+                .forEach(error -> {
+                    String fieldName = ((FieldError) error).getField();
+                    String errorMessage = error.getDefaultMessage();
+                    errors.put(fieldName, errorMessage);
+                });
 
-        // Construct response body
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", errorMessages);
+        Map<String, String> response = new HashMap<>();
+        if (!errors.isEmpty()) {
+            response.put("message", "Input validation failed.");
+            response.put("details", errors.toString());
+        } else {
+            response.put("message", "Input validation failed, but no specific field errors were reported.");
+        }
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleGeneralException(
+            Exception ex
+    ) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("message", "An unexpected error occurred: " + ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
