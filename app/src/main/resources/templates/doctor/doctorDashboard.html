@@ -1,45 +1,37 @@
-<!-- doctorDashboard.html -->
+
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Doctor Dashboard</title>
   <link rel="icon" type="image/png" th:href="@{/assets/images/logo/logo.png}" />
-  
-  <!-- Stylesheets -->
-  <link rel="stylesheet" th:href="@{/assets/css/adminDashboard.css}" />
+
+  <!-- <link rel="stylesheet" th:href="@{/assets/css/adminDashboard.css}" /> -->
   <link rel="stylesheet" th:href="@{/assets/css/doctorDashboard.css}" />
   <link rel="stylesheet" th:href="@{/assets/css/style.css}" />
 
-  <!-- JavaScript Files -->
-  <script th:src="@{/js/util.js}" defer></script>
-  <script th:src="@{/js/render.js}" defer></script>
-  <script th:src="@{/js/components/header.js}" defer></script>
-  <script th:src="@{/js/components/footer.js}" defer></script>
+  <script type="module" th:src="@{/js/render.js}" defer></script>
+  <script type="module" th:src="@{/js/util.js}" defer></script>
+  <script type="module" th:src="@{/js/components/header.js}" defer></script>
+  <script type="module" th:src="@{/js/components/footer.js}" defer></script>
+  <script type="module" th:src="@{/js/components/patientRows.js}" defer></script>
+  <script type="module" th:src="@{/js/services/patientServices.js}" defer></script>
   <script type="module" th:src="@{/js/doctorDashboard.js}" defer></script>
 </head>
+
 <body onload="renderContent()">
   <div class="container">
     <div class="wrapper">
-
-      <!-- Header Placeholder -->
       <div id="header"></div>
 
-      <!-- Main Content -->
       <div class="main-content">
-        <h1>Doctor Dashboard</h1>
+        <input type="text" id="searchBar" class="searchBar" placeholder="Search patients..." />
 
-        <!-- Search Bar -->
-        <input type="text" id="searchBar" class="searchBar" placeholder="Search Bar for custom output" />
-
-        <!-- Filter Controls -->
-        <div class="filters">
-          <button id="todayButton">Today's Appointments</button>
-          <input type="date" id="datePicker" />
+        <div class="filter-section">
+          <button id="todayButton" class="adminBtn">Today’s Appointments</button>
+          <input type="date" id="datePicker" class="datePicker" />
         </div>
-
-        <!-- Patient Table -->
-        <table class="patient-table">
+        <table id="patientTable" class="patient-table">
           <thead>
             <tr>
               <th>Patient ID</th>
@@ -50,12 +42,11 @@
             </tr>
           </thead>
           <tbody id="patientTableBody">
-            <!-- Dynamic rows will be inserted here -->
+            <!-- Rows inserted dynamically by JS -->
           </tbody>
         </table>
       </div>
 
-      <!-- Footer Placeholder -->
       <div id="footer"></div>
     </div>
   </div>
