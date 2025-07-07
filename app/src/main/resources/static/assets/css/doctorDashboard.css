@@ -1,35 +1,88 @@
-/* doctorDashboard.css */
-
-/* Table Header */
-.table-header {
-  font-size: 24px;
-  color: #015c5d;
-  margin-bottom: 30px;
-  margin-right: 0;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Table Styling */
-table {
+html, body {
+  height: 100%;
+  font-family: Arial, sans-serif;
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: 30px;
+  text-align: center;
+  background-color: #f4fdfd;
+}
+
+.searchBar {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+  width: 60%;
+  max-width: 500px;
+}
+
+.filter-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.today-btn,
+.adminBtn {
+  background-color: #015c5d;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.today-btn:hover,
+.adminBtn:hover {
+  background-color: #017d7e;
+}
+
+.datePicker,
+.date-picker {
+  margin-left: 10px;
+  padding: 10px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.patient-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: sans-serif;
   margin-top: 20px;
+  font-family: sans-serif;
 }
 
-/* Table Head */
 thead {
-  background-color: #33333310;
-  color: #fff;
+background-color: #33333380;
+ color: #fff;
 }
 
-/* Table Cells */
-td, th {
+th, td {
   padding: 12px 16px;
   text-align: center;
   border-bottom: 1px solid #ddd;
 }
 
-/* Table Row Styling */
 tbody tr:nth-child(even) {
   background-color: #f9f9f959;
 }
@@ -42,7 +95,6 @@ tbody tr:hover {
   background-color: #015c5d39;
 }
 
-/* Prescription Button */
 .prescription-btn {
   width: 30px;
   height: 30px;
@@ -59,30 +111,55 @@ tbody tr:hover {
   transform: scale(0.95);
 }
 
-/* No Record Message */
 .noPatientRecord {
   font-size: 16px;
   font-style: italic;
-  color: grey;
+  color: gray;
+  margin-top: 20px;
 }
 
-/* Today Button */
-.today-btn {
-  margin-right: 10px;
-  padding: 10px;
-  background-color: #015c5d;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+.table-header {
+  font-size: 24px;
+  color: #015c5d;
+  margin-bottom: 30px;
 }
 
-/* Date Picker */
-.date-picker {
-  margin-left: 10px;
-  margin-top: 13px;
-  padding: 10px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+@media (max-width: 768px) {
+  .searchBar {
+    width: 90%;
+    font-size: 14px;
+  }
+
+  .filter-section {
+    flex-direction: column;
+  }
+
+  .today-btn,
+  .adminBtn {
+    width: 80%;
+  }
+
+  .patient-table {
+    font-size: 14px;
+  }
+
+  th, td {
+    padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .searchBar {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  .datePicker {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .today-btn {
+    width: 100%;
+  }
 }
